@@ -1,0 +1,1 @@
+{"root":["./vite.config.ts","./src/app.tsx","./src/constants.ts","./src/firebase.ts","./src/main.tsx","./src/vite-env.d.ts","./src/contexts/authcontext.tsx","./src/pages/adminassign.tsx","./src/pages/admindoctors.tsx","./src/pages/entry.tsx","./src/pages/index.tsx","./src/pages/login.tsx","./src/pages/roster.tsx","./src/pages/selectuser.tsx"],"version":"5.8.3"}

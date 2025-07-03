@@ -1,0 +1,24 @@
+.react-calendar__tile.selected {
+  background: #3b82f6 !important; /* Tailwindのblue-500 */
+  color: white;
+}
+
+.react-calendar__tile.hope {
+  background: #3b82f6 !important; /* blue-500 */
+  color: white;
+}
+
+.react-calendar__tile.day-ng {
+  background: #facc15 !important; /* yellow-400 */
+  color: white;
+}
+
+.react-calendar__tile.night-ng {
+  background: #ef4444 !important; /* red-500 */
+  color: white;
+}
+
+.react-calendar__tile.all-ng {
+  background: #6b7280 !important; /* gray-500 */
+  color: white;
+}

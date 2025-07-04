@@ -1,6 +1,7 @@
+// Login.tsx
 import { useState } from "react";
-import { auth } from "../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 import { useNavigate } from "react-router-dom";
 
 function Login() {
@@ -12,57 +13,61 @@ function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
-
-    if (!email.includes("@")) {
-      setError("有効なメールアドレスを入力してください");
-      setLoading(false);
-      return;
-    }
-    if (password.length < 6) {
-      setError("パスワードは6文字以上にしてください");
-      setLoading(false);
-      return;
-    }
+    setError("");
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
       navigate("/");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError("ログインに失敗しました。メールアドレスとパスワードを確認してください。");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-4 border rounded shadow">
-      <h1 className="text-xl font-bold mb-4">ログイン</h1>
-      {error && <p className="text-red-500">{error}</p>}
+    <div className="max-w-md mx-auto mt-20 p-6 bg-white shadow rounded space-y-4">
+      <h1 className="text-2xl font-bold text-center text-blue-600">
+        日当直管理くん
+      </h1>
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          className="w-full p-2 border rounded"
-          type="email"
-          placeholder="メールアドレス"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          className="w-full p-2 border rounded"
-          type="password"
-          placeholder="パスワード"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        {error && (
+          <div className="text-red-600 text-sm border border-red-300 p-2 rounded">
+            {error}
+          </div>
+        )}
+        <div>
+          <label className="block mb-1">メールアドレス</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full p-2 border rounded"
+          />
+        </div>
+        <div>
+          <label className="block mb-1">パスワード</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full p-2 border rounded"
+          />
+        </div>
         <button
           type="submit"
-          className="w-full p-2 bg-blue-500 text-white rounded"
           disabled={loading}
+          className={`w-full p-2 text-white rounded ${
+            loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-500 hover:bg-blue-600"
+          }`}
         >
-          {loading ? "処理中..." : "ログイン"}
+          {loading ? "ログイン中..." : "ログイン"}
         </button>
       </form>
     </div>

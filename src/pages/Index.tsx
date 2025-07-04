@@ -1,70 +1,104 @@
 import { useContext } from "react";
-import { AuthContext } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
+import { SelectedDoctorContext } from "../contexts/SelectedDoctorContext";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { auth } from "../firebase";
+import { signOut } from "firebase/auth";
+import { AuthContext } from "../contexts/AuthContext";
 
 function Index() {
-  const { user, role } = useContext(AuthContext);
+  const { selectedDoctor } = useContext(SelectedDoctorContext);
+  const { role, loading } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  if (loading) {
+    return <div className="text-center mt-10">読み込み中...</div>;
+  }
+
+  // userでユーザー未選択ならリダイレクト
+  if (role === "user" && !selectedDoctor) {
+    return <Navigate to="/select-user" />;
+  }
 
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/login");
   };
 
+  // 当月を計算
+  const now = new Date();
+  const monthParam = `${now.getFullYear()}-${String(
+    now.getMonth() + 1
+  ).padStart(2, "0")}`;
+
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold mb-2">ホームメニュー</h1>
-        <p className="text-gray-600 text-sm">
-          ログイン中: <span className="font-semibold">{user?.email}</span>
-        </p>
-      </div>
+    <div className="max-w-md mx-auto mt-10 p-4 space-y-4">
+      <h1 className="text-xl font-bold">ホームメニュー</h1>
 
-      <div className="flex flex-col gap-3">
-        {/* 当直希望入力 */}
-        <button
-          onClick={() => navigate("/select-user")}
-          className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
-        >
-          当直希望入力
-        </button>
+      {role === "admin" && (
+        <>
+          <Link
+            to="/admin/assign"
+            className="block p-2 bg-blue-500 text-white rounded text-center"
+          >
+            当直表作成
+          </Link>
 
-        {/* 当直表閲覧 */}
-        <button
-          onClick={() => navigate("/roster/2024-06")}
-          className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
-        >
-          当直表閲覧
-        </button>
+          <Link
+            to="/admin/doctors"
+            className="block p-2 bg-green-500 text-white rounded text-center"
+          >
+            医師管理
+          </Link>
 
-        {/* 管理者メニュー */}
-        {role === "admin" && (
-          <>
-            <button
-              onClick={() => navigate("/admin/assign")}
-              className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
-            >
-              当直表作成
-            </button>
-            <button
-              onClick={() => navigate("/admin/doctors")}
-              className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded"
-            >
-              医師管理
-            </button>
-          </>
-        )}
+          <Link
+            to={`/roster/${monthParam}`}
+            className="block p-2 bg-purple-500 text-white rounded text-center"
+          >
+            当直表閲覧
+          </Link>
 
-        {/* ログアウト */}
-        <button
-          onClick={handleLogout}
-          className="w-full px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
-        >
-          ログアウト
-        </button>
-      </div>
+          <button
+            onClick={handleLogout}
+            className="w-full p-2 bg-gray-300 hover:bg-gray-400 rounded"
+          >
+            ログアウト
+          </button>
+        </>
+      )}
+
+      {role === "user" && selectedDoctor && (
+        <>
+          <p>選択中のユーザー: {selectedDoctor.name}</p>
+
+          <Link
+            to="/entry"
+            className="block p-2 bg-blue-500 text-white rounded text-center"
+          >
+            当直希望入力
+          </Link>
+
+          <Link
+            to={`/roster/${monthParam}`}
+            className="block p-2 bg-green-500 text-white rounded text-center"
+          >
+            当直表閲覧
+          </Link>
+
+          <Link
+            to="/my-duties"
+            className="block p-2 bg-yellow-500 text-white rounded text-center"
+          >
+            My日当直
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            className="w-full p-2 bg-gray-300 hover:bg-gray-400 rounded"
+          >
+            ログアウト
+          </button>
+        </>
+      )}
     </div>
   );
 }

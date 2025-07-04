@@ -10,9 +10,9 @@ function Roster() {
     Record<string, { dayDuty: string[]; nightDuty: string[] }>
   >({});
   const [doctors, setDoctors] = useState<{ id: string; name: string }[]>([]);
+  const [holidays, setHolidays] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
-  // 月リスト（前後1ヶ月）
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -23,7 +23,6 @@ function Roster() {
     return { value: `${y}-${m}`, label: `${y}年${m}月` };
   });
 
-  // 初期月を現在に
   useEffect(() => {
     if (month === "") {
       setMonth(monthOptions[1].value);
@@ -48,7 +47,6 @@ function Roster() {
     const fetchData = async () => {
       setLoading(true);
 
-      // 医師一覧
       const doctorsSnap = await getDocs(collection(db, "doctors"));
       const doctorsList = doctorsSnap.docs.map((doc) => ({
         id: doc.id,
@@ -56,13 +54,20 @@ function Roster() {
       }));
       setDoctors(doctorsList);
 
-      // 割当
       const assignRef = doc(db, "assignments", month?.replace("-", "") || "");
       const assignSnap = await getDoc(assignRef);
       if (assignSnap.exists()) {
         setAssignments(assignSnap.data().entries || {});
       } else {
         setAssignments({});
+      }
+
+      try {
+        const res = await fetch("https://holidays-jp.github.io/api/v1/date.json");
+        const data = await res.json();
+        setHolidays(data);
+      } catch (err) {
+        console.error("祝日の取得に失敗しました", err);
       }
 
       setLoading(false);
@@ -73,13 +78,8 @@ function Roster() {
     }
   }, [month]);
 
-  if (!month) {
-    return <div className="mt-10 text-center">月を選択してください。</div>;
-  }
-
-  if (loading) {
-    return <div className="mt-10 text-center">読み込み中...</div>;
-  }
+  if (!month) return <div className="mt-10 text-center">月を選択してください。</div>;
+  if (loading) return <div className="mt-10 text-center">読み込み中...</div>;
 
   const daysInMonth = getDaysInMonth(month);
 
@@ -94,7 +94,6 @@ function Roster() {
 
       <h1 className="text-2xl font-bold">{month.replace("-", "年")}の当直表</h1>
 
-      {/* 月選択 */}
       <div className="flex flex-wrap gap-4 mb-4">
         <div>
           <label className="mr-2">月を選択:</label>
@@ -112,7 +111,6 @@ function Roster() {
         </div>
       </div>
 
-      {/* 当直表 */}
       <table className="w-full border text-sm">
         <thead className="bg-gray-50">
           <tr>
@@ -124,25 +122,30 @@ function Roster() {
         <tbody>
           {daysInMonth.map(({ date, weekday, dayOfWeek }) => {
             let rowClass = "";
-            if (dayOfWeek === 0) rowClass = "bg-red-50";
-            else if (dayOfWeek === 6) rowClass = "bg-blue-50";
+            if (holidays[date] || dayOfWeek === 0) {
+              rowClass = "bg-red-50";
+            } else if (dayOfWeek === 6) {
+              rowClass = "bg-blue-50";
+            }
 
             return (
               <tr key={date} className={`${rowClass} align-top`}>
                 <td className="border p-2">
-                  {date} ({weekday})
+                  {date} ({weekday}){holidays[date] ? ` (${holidays[date]})` : ""}
                 </td>
                 <td className="border p-2">
-                  {(assignments[date]?.dayDuty || []).map(
-                    (id) =>
-                      doctors.find((d) => d.id === id)?.name || "(不明)"
-                  ).join("、") || "未設定"}
+                  {(assignments[date]?.dayDuty || [])
+                    .map(
+                      (id) => doctors.find((d) => d.id === id)?.name || "(不明)"
+                    )
+                    .join("、") || "未設定"}
                 </td>
                 <td className="border p-2">
-                  {(assignments[date]?.nightDuty || []).map(
-                    (id) =>
-                      doctors.find((d) => d.id === id)?.name || "(不明)"
-                  ).join("、") || "未設定"}
+                  {(assignments[date]?.nightDuty || [])
+                    .map(
+                      (id) => doctors.find((d) => d.id === id)?.name || "(不明)"
+                    )
+                    .join("、") || "未設定"}
                 </td>
               </tr>
             );

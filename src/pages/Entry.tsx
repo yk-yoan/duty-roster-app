@@ -1,17 +1,25 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useContext } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { HOPE_OPTIONS } from "../constants";
+import { SelectedDoctorContext } from "../contexts/SelectedDoctorContext";
 
 function Entry() {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const [doctorName, setDoctorName] = useState<string>("");
+  const { selectedDoctor } = useContext(SelectedDoctorContext);
   const [entries, setEntries] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState("");
   const [saving, setSaving] = useState(false);
+  const [holidays, setHolidays] = useState<Record<string, string>>({});
+  const [externalTraining, setExternalTraining] = useState(false);
+
+  useEffect(() => {
+    if (!selectedDoctor) {
+      navigate("/select-user");
+    }
+  }, [selectedDoctor]);
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -30,6 +38,36 @@ function Entry() {
     }
   }, [monthOptions, month]);
 
+  useEffect(() => {
+    const fetchHolidays = async () => {
+      try {
+        const res = await fetch("https://holidays-jp.github.io/api/v1/date.json");
+        const data = await res.json();
+        setHolidays(data);
+      } catch (err) {
+        console.error("祝日データ取得エラー", err);
+      }
+    };
+    fetchHolidays();
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!selectedDoctor || !month) return;
+      setLoading(true);
+
+      const ref = doc(db, "hopes", `${selectedDoctor.id}_${month}`);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setEntries(snap.data().entries || {});
+      } else {
+        setEntries({});
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, [selectedDoctor, month]);
+
   const getDaysInMonth = (month: string) => {
     const [year, monthNum] = month.split("-");
     const lastDay = new Date(Number(year), Number(monthNum), 0).getDate();
@@ -37,13 +75,12 @@ function Entry() {
       const day = (i + 1).toString().padStart(2, "0");
       const dateStr = `${month}-${day}`;
       const dateObj = new Date(`${month}-${day}`);
-      const weekDay = ["日", "月", "火", "水", "木", "金", "土"][
-        dateObj.getDay()
-      ];
+      const weekDay = ["日", "月", "火", "水", "木", "金", "土"][dateObj.getDay()];
       return {
         date: dateStr,
         weekday: weekDay,
         dayOfWeek: dateObj.getDay(),
+        holiday: holidays[dateStr] || "",
       };
     });
   };
@@ -51,41 +88,45 @@ function Entry() {
   const daysInMonth = getDaysInMonth(month);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!id || !month) return;
-      setLoading(true);
+    if (externalTraining) {
+      const updatedEntries: Record<string, string> = { ...entries };
 
-      const doctorRef = doc(db, "doctors", id);
-      const doctorSnap = await getDoc(doctorRef);
-      if (doctorSnap.exists()) {
-        setDoctorName(doctorSnap.data().name || "");
-      } else {
-        setDoctorName("");
+      for (let i = 0; i < daysInMonth.length; i++) {
+        const { date, dayOfWeek, holiday } = daysInMonth[i];
+
+        // 平日かつ祝日でない日 → 終日不可
+        if (dayOfWeek >= 1 && dayOfWeek <= 5 && !holiday) {
+          updatedEntries[date] = "終日不可";
+          continue;
+        }
+
+        // 翌日を確認
+        const nextDay = daysInMonth[i + 1];
+        if (nextDay) {
+          const nextIsWeekday = nextDay.dayOfWeek >= 1 && nextDay.dayOfWeek <= 5 && !nextDay.holiday;
+          if (nextIsWeekday && (dayOfWeek === 0 || holiday)) {
+            updatedEntries[date] = "当直不可";
+            continue;
+          }
+        }
+
+        // デフォルト
+        updatedEntries[date] = "指定なし";
       }
-
-      const hopeRef = doc(db, "hopes", `${id}_${month}`);
-      const hopeSnap = await getDoc(hopeRef);
-      if (hopeSnap.exists()) {
-        setEntries(hopeSnap.data().entries || {});
-      } else {
-        setEntries({});
-      }
-
-      setLoading(false);
-    };
-    fetchData();
-  }, [id, month]);
+      setEntries(updatedEntries);
+    }
+  }, [externalTraining, daysInMonth]);
 
   const handleChange = (date: string, value: string) => {
     setEntries((prev) => ({ ...prev, [date]: value }));
   };
 
   const handleSave = async () => {
-    if (!id) return;
+    if (!selectedDoctor) return;
     setSaving(true);
-    const ref = doc(db, "hopes", `${id}_${month}`);
+    const ref = doc(db, "hopes", `${selectedDoctor.id}_${month}`);
     await setDoc(ref, {
-      doctorId: id,
+      doctorId: selectedDoctor.id,
       month,
       entries,
       updatedAt: serverTimestamp(),
@@ -94,47 +135,57 @@ function Entry() {
     setSaving(false);
   };
 
-  if (loading || !month) {
+  if (!selectedDoctor || loading) {
     return (
-      <div className="max-w-2xl mx-auto mt-10 p-4 text-center">
+      <div className="text-center mt-10">
         <p>読み込み中...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 p-6 bg-white shadow rounded space-y-6">
-      {/* 上部固定バー */}
-      <div className="sticky top-0 z-10 bg-white border-b py-3 flex justify-between items-center">
+    <div className="max-w-3xl mx-auto mt-10 p-4">
+      {/* 固定ヘッダー */}
+      <div className="sticky top-0 z-10 bg-white border-b flex items-center justify-between p-2">
         <button
           onClick={() => navigate("/")}
           className="p-2 bg-gray-200 hover:bg-gray-300 rounded text-sm"
         >
           ← ホームに戻る
         </button>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className={`p-2 text-white rounded text-sm ${
-            saving
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-600"
-          }`}
-        >
-          {saving ? "保存中..." : "保存"}
-        </button>
+        <div className="flex items-center gap-2">
+          <label className="text-sm flex items-center gap-1">
+            <input
+              type="checkbox"
+              checked={externalTraining}
+              onChange={() => setExternalTraining(!externalTraining)}
+            />
+            外病院研修
+          </label>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`p-2 text-white rounded ${
+              saving
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-600"
+            }`}
+          >
+            {saving ? "保存中..." : "保存"}
+          </button>
+        </div>
       </div>
 
-      <h1 className="text-2xl font-bold">
-        {doctorName ? `${doctorName}の当直希望入力` : "当直希望入力"}
+      <h1 className="text-xl font-bold mt-4 mb-4">
+        {selectedDoctor.name}の当直希望入力
       </h1>
 
-      <div className="flex items-center space-x-2">
-        <label className="text-sm font-medium">月を選択:</label>
+      <div className="mb-4">
+        <label>月を選択:</label>
         <select
           value={month}
           onChange={(e) => setMonth(e.target.value)}
-          className="p-2 border rounded"
+          className="ml-2 p-1 border rounded"
         >
           {monthOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -148,22 +199,28 @@ function Entry() {
         <table className="w-full border border-gray-300 text-sm">
           <thead>
             <tr className="bg-gray-100">
-              <th className="border p-2 text-left">日付</th>
-              <th className="border p-2 text-left">希望</th>
+              <th className="border p-2">日付</th>
+              <th className="border p-2">希望</th>
             </tr>
           </thead>
           <tbody>
-            {daysInMonth.map(({ date, weekday, dayOfWeek }) => {
+            {daysInMonth.map(({ date, weekday, dayOfWeek, holiday }) => {
               let rowClass = "";
-              if (dayOfWeek === 0) {
+              if (holiday || dayOfWeek === 0) {
                 rowClass = "bg-red-50";
               } else if (dayOfWeek === 6) {
                 rowClass = "bg-blue-50";
               }
+
               return (
                 <tr key={date} className={rowClass}>
                   <td className="border p-2">
                     {date} ({weekday})
+                    {holiday && (
+                      <span className="ml-2 text-red-600 font-semibold">
+                        {holiday}
+                      </span>
+                    )}
                   </td>
                   <td className="border p-2">
                     <select

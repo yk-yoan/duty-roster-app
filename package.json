@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "firebase": "^11.9.1",
+    "japanese-holidays": "^1.0.10",
     "react": "^19.1.0",
     "react-calendar": "^6.0.0",
     "react-dom": "^19.1.0",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/japanese-holidays": "^1.0.3",
     "@types/react": "^19.1.8",
     "@types/react-calendar": "^4.1.0",
     "@types/react-dom": "^19.1.6",

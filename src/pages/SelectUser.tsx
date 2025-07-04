@@ -1,27 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
-import { useNavigate } from "react-router-dom";
-import { signOut } from "firebase/auth";
-import { auth } from "../firebase";
-import { useContext } from "react";
-import { AuthContext } from "../contexts/AuthContext";
 import { SelectedDoctorContext } from "../contexts/SelectedDoctorContext";
-
-interface Doctor {
-  id: string;
-  name: string;
-  year: string;
-}
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../contexts/AuthContext";
 
 function SelectUser() {
-  const { user } = useContext(AuthContext);
   const { setSelectedDoctor } = useContext(SelectedDoctorContext);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeYear, setActiveYear] = useState<string>("");
-
+  const { user, loading, role } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [doctors, setDoctors] = useState<{ id: string; name: string; year: string }[]>([]);
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user && !loading) {
+      navigate("/login");
+    }
+  }, [user, loading, navigate]);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -29,80 +24,70 @@ function SelectUser() {
       const docs = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         name: doc.data().name,
-        year: doc.data().year || "未設定",
+        year: doc.data().year || "",
       }));
-      // 年次で文字列昇順ソート
-      docs.sort((a, b) => a.year.localeCompare(b.year, "ja"));
       setDoctors(docs);
-      // 最初のタブは最初の年次
-      setActiveYear(docs[0]?.year || "");
-      setLoading(false);
     };
     fetchDoctors();
   }, []);
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    navigate("/login");
-  };
-
-  const handleSelect = (doctor: Doctor) => {
+  const handleSelect = (doctor: { id: string; name: string; year: string }) => {
     setSelectedDoctor(doctor);
     navigate("/");
   };
+
+  // 年次の種類
+  const years = Array.from(new Set(doctors.map((d) => d.year))).sort();
 
   if (loading) {
     return <div className="text-center mt-10">読み込み中...</div>;
   }
 
-  // 年次リスト
-  const uniqueYears = Array.from(new Set(doctors.map((d) => d.year))).sort(
-    (a, b) => a.localeCompare(b, "ja")
-  );
-
   return (
-    <div className="max-w-md mx-auto mt-10">
-      <h1 className="text-xl font-bold mb-4">ユーザー選択</h1>
-      <p className="mb-4">ログイン中: {user?.email}</p>
-      <button
-        onClick={handleLogout}
-        className="mb-4 p-2 bg-gray-300 hover:bg-gray-400 rounded"
-      >
-        ログアウト
-      </button>
+    <div className="max-w-md mx-auto mt-10 p-4">
+      <h1 className="text-xl font-bold mb-4">ユーザーを選択</h1>
 
-      {/* タブ */}
+      {/* 年次タブ */}
       <div className="flex flex-wrap gap-2 mb-4">
-        {uniqueYears.map((year) => (
+        {years.map((year) => (
           <button
             key={year}
-            onClick={() => setActiveYear(year)}
-            className={`p-2 border rounded ${
-              activeYear === year
+            onClick={() => setSelectedYear(year)}
+            className={`px-3 py-1 border rounded ${
+              selectedYear === year
                 ? "bg-blue-500 text-white"
-                : "bg-gray-100 hover:bg-gray-200"
+                : "bg-white hover:bg-gray-100"
             }`}
           >
             {year}
           </button>
         ))}
+        <button
+          onClick={() => setSelectedYear(null)}
+          className={`px-3 py-1 border rounded ${
+            selectedYear === null
+              ? "bg-blue-500 text-white"
+              : "bg-white hover:bg-gray-100"
+          }`}
+        >
+          全て
+        </button>
       </div>
 
-      {/* 医師リスト */}
-      <ul className="space-y-2">
+      {/* ユーザー一覧 */}
+      <div className="border rounded p-2 max-h-80 overflow-y-auto space-y-2">
         {doctors
-          .filter((d) => d.year === activeYear)
+          .filter((d) => !selectedYear || d.year === selectedYear)
           .map((doctor) => (
-            <li key={doctor.id}>
-              <button
-                onClick={() => handleSelect(doctor)}
-                className="w-full p-2 bg-blue-500 text-white rounded"
-              >
-                {doctor.name}
-              </button>
-            </li>
+            <button
+              key={doctor.id}
+              onClick={() => handleSelect(doctor)}
+              className="w-full text-left p-2 border rounded hover:bg-gray-50"
+            >
+              {doctor.name} ({doctor.year})
+            </button>
           ))}
-      </ul>
+      </div>
     </div>
   );
 }

@@ -39,7 +39,6 @@ function AdminAssign() {
     }
   }, [monthOptions, month]);
 
-  // 祝日データ取得
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
@@ -190,7 +189,6 @@ function AdminAssign() {
 
   return (
     <div className="max-w-6xl mx-auto mt-10 p-6 bg-white shadow rounded space-y-6">
-      {/* 固定ヘッダー */}
       <div className="sticky top-0 z-20 bg-white border-b py-2 flex flex-wrap gap-4 justify-between items-center shadow-sm">
         <div className="flex gap-2">
           <button
@@ -276,11 +274,15 @@ function AdminAssign() {
                   const alreadySelected = Object.keys(assignments).some((key) => {
                     if (key === date) return false;
                     const diffDays = Math.abs(
-                      (new Date(date).getTime() - new Date(key).getTime()) / (1000 * 60 * 60 * 24)
+                      (new Date(date).getTime() - new Date(key).getTime()) /
+                        (1000 * 60 * 60 * 24)
                     );
                     return (
                       diffDays <= intervalDays &&
-                      assignments[key]?.dayDuty?.includes(doctor.id)
+                      (
+                        assignments[key]?.dayDuty?.includes(doctor.id) ||
+                        assignments[key]?.nightDuty?.includes(doctor.id)
+                      )
                     );
                   });
 
@@ -313,8 +315,7 @@ function AdminAssign() {
                 選択中:{" "}
                 {dayDutySelected
                   .map(
-                    (id) =>
-                      doctors.find((d) => d.id === id)?.name || "(不明)"
+                    (id) => doctors.find((d) => d.id === id)?.name || "(不明)"
                   )
                   .join("、") || "なし"}
               </div>
@@ -329,11 +330,15 @@ function AdminAssign() {
                   const alreadySelected = Object.keys(assignments).some((key) => {
                     if (key === date) return false;
                     const diffDays = Math.abs(
-                      (new Date(date).getTime() - new Date(key).getTime()) / (1000 * 60 * 60 * 24)
+                      (new Date(date).getTime() - new Date(key).getTime()) /
+                        (1000 * 60 * 60 * 24)
                     );
                     return (
                       diffDays <= intervalDays &&
-                      assignments[key]?.nightDuty?.includes(doctor.id)
+                      (
+                        assignments[key]?.dayDuty?.includes(doctor.id) ||
+                        assignments[key]?.nightDuty?.includes(doctor.id)
+                      )
                     );
                   });
 
@@ -372,8 +377,7 @@ function AdminAssign() {
                 選択中:{" "}
                 {nightDutySelected
                   .map(
-                    (id) =>
-                      doctors.find((d) => d.id === id)?.name || "(不明)"
+                    (id) => doctors.find((d) => d.id === id)?.name || "(不明)"
                   )
                   .join("、") || "なし"}
               </div>
@@ -382,52 +386,52 @@ function AdminAssign() {
         );
       })}
 
-{showModal && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded max-w-md w-full space-y-4 shadow-lg border">
-      <h2 className="text-xl font-bold text-center border-b pb-2">担当回数詳細</h2>
-      <div className="max-h-80 overflow-y-auto">
-        <table className="w-full text-sm border border-gray-300">
-          <thead className="sticky top-0 bg-gray-100">
-            <tr>
-              <th className="border px-2 py-1 text-left">医師（年次）</th>
-              <th className="border px-2 py-1 text-center">日直</th>
-              <th className="border px-2 py-1 text-center">当直</th>
-            </tr>
-          </thead>
-          <tbody>
-            {doctors
-              .slice()
-              .sort((a, b) => {
-                const aYear = parseInt(a.year) || 999;
-                const bYear = parseInt(b.year) || 999;
-                return aYear - bYear;
-              })
-              .map((doctor) => (
-                <tr key={doctor.id} className="hover:bg-gray-50">
-                  <td className="border px-2 py-1">
-                    {doctor.name}（{doctor.year}年目）
-                  </td>
-                  <td className="border px-2 py-1 text-center">
-                    {counts[doctor.id].day}
-                  </td>
-                  <td className="border px-2 py-1 text-center">
-                    {counts[doctor.id].night}
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
-      <button
-        onClick={() => setShowModal(false)}
-        className="w-full mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded"
-      >
-        閉じる
-      </button>
-    </div>
-  </div>
-)}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded max-w-md w-full space-y-4 shadow-lg border">
+            <h2 className="text-xl font-bold text-center border-b pb-2">担当回数詳細</h2>
+            <div className="max-h-80 overflow-y-auto">
+              <table className="w-full text-sm border border-gray-300">
+                <thead className="sticky top-0 bg-gray-100">
+                  <tr>
+                    <th className="border px-2 py-1 text-left">医師（年次）</th>
+                    <th className="border px-2 py-1 text-center">日直</th>
+                    <th className="border px-2 py-1 text-center">当直</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {doctors
+                    .slice()
+                    .sort((a, b) => {
+                      const aYear = parseInt(a.year) || 999;
+                      const bYear = parseInt(b.year) || 999;
+                      return aYear - bYear;
+                    })
+                    .map((doctor) => (
+                      <tr key={doctor.id} className="hover:bg-gray-50">
+                        <td className="border px-2 py-1">
+                          {doctor.name}（{doctor.year}年目）
+                        </td>
+                        <td className="border px-2 py-1 text-center">
+                          {counts[doctor.id].day}
+                        </td>
+                        <td className="border px-2 py-1 text-center">
+                          {counts[doctor.id].night}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+            <button
+              onClick={() => setShowModal(false)}
+              className="w-full mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded"
+            >
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

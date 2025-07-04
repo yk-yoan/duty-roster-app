@@ -14,6 +14,7 @@ function Entry() {
   const [saving, setSaving] = useState(false);
   const [holidays, setHolidays] = useState<Record<string, string>>({});
   const [externalTraining, setExternalTraining] = useState(false);
+  const [freeComment, setFreeComment] = useState("");
 
   useEffect(() => {
     if (!selectedDoctor) {
@@ -59,9 +60,12 @@ function Entry() {
       const ref = doc(db, "hopes", `${selectedDoctor.id}_${month}`);
       const snap = await getDoc(ref);
       if (snap.exists()) {
-        setEntries(snap.data().entries || {});
+        const data = snap.data();
+        setEntries(data.entries || {});
+        setFreeComment(data.freeComment || "");
       } else {
         setEntries({});
+        setFreeComment("");
       }
       setLoading(false);
     };
@@ -129,6 +133,7 @@ function Entry() {
       doctorId: selectedDoctor.id,
       month,
       entries,
+      freeComment,
       updatedAt: serverTimestamp(),
     });
     alert("保存しました！");
@@ -144,7 +149,7 @@ function Entry() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 p-4">
+    <div className="max-w-3xl mx-auto mt-10 p-4 space-y-4">
       {/* 固定ヘッダー */}
       <div className="sticky top-0 z-10 bg-white border-b flex items-center justify-between p-2">
         <button
@@ -240,6 +245,20 @@ function Entry() {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* フリーコメント */}
+      <div>
+        <label className="block text-sm font-medium mt-4 mb-1">
+          フリーコメント
+        </label>
+        <textarea
+          value={freeComment}
+          onChange={(e) => setFreeComment(e.target.value)}
+          rows={4}
+          className="w-full border rounded p-2"
+          placeholder="自由記入欄"
+        />
       </div>
     </div>
   );

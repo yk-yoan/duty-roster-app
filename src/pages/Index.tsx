@@ -44,6 +44,13 @@ function Index() {
           </Link>
 
           <Link
+            to="/admin/hopes"
+             className="block p-2 bg-yellow-500 text-white rounded text-center"
+          >
+            みんなの日当直希望
+          </Link>
+
+          <Link
             to="/admin/doctors"
             className="block p-2 bg-green-500 text-white rounded text-center"
           >

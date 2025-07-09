@@ -12,6 +12,7 @@ import AdminDoctors from "./pages/AdminDoctors";
 import Roster from "./pages/Roster";
 import MyDuties from "./pages/MyDuties";
 import AdminHopes from "./pages/AdminHopes";
+import Exchange from "./pages/Exchange"; // ★ 追加
 
 const ProtectedRoute = ({
   children,
@@ -33,8 +34,10 @@ function App() {
     <AuthProvider>
       <SelectedDoctorProvider>
         <Routes>
+          {/* ログイン */}
           <Route path="/login" element={<Login />} />
 
+          {/* ホーム */}
           <Route
             path="/"
             element={
@@ -44,6 +47,7 @@ function App() {
             }
           />
 
+          {/* ユーザー選択 */}
           <Route
             path="/select-user"
             element={
@@ -53,6 +57,7 @@ function App() {
             }
           />
 
+          {/* 当直希望入力 */}
           <Route
             path="/entry"
             element={
@@ -62,6 +67,7 @@ function App() {
             }
           />
 
+          {/* My日当直 */}
           <Route
             path="/my-duties"
             element={
@@ -71,6 +77,17 @@ function App() {
             }
           />
 
+          {/* 日当直交換 */}
+          <Route
+            path="/exchange"
+            element={
+              <ProtectedRoute>
+                <Exchange />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 管理者：当直表作成 */}
           <Route
             path="/admin/assign"
             element={
@@ -80,6 +97,7 @@ function App() {
             }
           />
 
+          {/* 管理者：医師管理 */}
           <Route
             path="/admin/doctors"
             element={
@@ -89,6 +107,7 @@ function App() {
             }
           />
 
+          {/* 管理者：みんなの希望 */}
           <Route
             path="/admin/hopes"
             element={
@@ -98,6 +117,7 @@ function App() {
             }
           />
 
+          {/* 当直表閲覧（共通） */}
           <Route
             path="/roster/:month"
             element={
@@ -107,6 +127,7 @@ function App() {
             }
           />
 
+          {/* 不明なパスはリダイレクト */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </SelectedDoctorProvider>

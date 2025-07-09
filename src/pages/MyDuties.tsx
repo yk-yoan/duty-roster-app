@@ -9,14 +9,11 @@ function MyDuties() {
   const { user, loading } = useContext(AuthContext);
   const { selectedDoctor } = useContext(SelectedDoctorContext);
   const navigate = useNavigate();
-  const [assignments, setAssignments] = useState<
-    Record<string, ("日直" | "当直")[]>
-  >({});
+  const [assignments, setAssignments] = useState<Record<string, ("日直" | "当直")[]>>({});
   const [loadingData, setLoadingData] = useState(true);
   const [month, setMonth] = useState("");
   const [holidays, setHolidays] = useState<Record<string, string>>({});
 
-  // 月選択肢
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -39,7 +36,6 @@ function MyDuties() {
     }
   }, [user, loading, navigate]);
 
-  // 祝日取得
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
@@ -56,9 +52,7 @@ function MyDuties() {
   useEffect(() => {
     const fetchData = async () => {
       if (!selectedDoctor || !month) return;
-
       setLoadingData(true);
-
       const snapshot = await getDocs(collection(db, "assignments"));
       const results: Record<string, ("日直" | "当直")[]> = {};
 
@@ -85,15 +79,14 @@ function MyDuties() {
   if (loading || loadingData || !month) {
     return (
       <div className="flex items-center justify-center h-screen">
-      <div className="flex flex-col items-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
-        <p className="mt-4 text-lg font-semibold text-gray-700">読み込み中...</p>
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+          <p className="mt-4 text-lg font-semibold text-gray-700">読み込み中...</p>
+        </div>
       </div>
-    </div>
     );
   }
 
-  // カレンダーの情報
   const [year, monthNumStr] = month.split("-");
   const monthNum = Number(monthNumStr);
   const firstDay = new Date(Number(year), monthNum - 1, 1);
@@ -101,11 +94,8 @@ function MyDuties() {
   const startWeekday = firstDay.getDay();
   const totalDays = lastDay.getDate();
 
-  // 日付配列（先頭の空白含む）
   const days: { date?: string; duties?: ("日直" | "当直")[]; holidayName?: string; dayOfWeek?: number }[] = [];
-  for (let i = 0; i < startWeekday; i++) {
-    days.push({});
-  }
+  for (let i = 0; i < startWeekday; i++) days.push({});
   for (let d = 1; d <= totalDays; d++) {
     const dateStr = `${month}-${String(d).padStart(2, "0")}`;
     const dateObj = new Date(`${month}-${String(d).padStart(2, "0")}`);
@@ -129,7 +119,6 @@ function MyDuties() {
         </button>
       </div>
 
-      {/* 月選択 */}
       <div className="flex items-center gap-2">
         <label className="text-sm font-medium">月を選択:</label>
         <select
@@ -154,18 +143,14 @@ function MyDuties() {
             {d}
           </div>
         ))}
-
         {days.map((day, idx) => {
           const isHoliday = !!day.holidayName;
           const isSunday = day.dayOfWeek === 0;
           const isSaturday = day.dayOfWeek === 6;
 
           let bgClass = "";
-          if (isHoliday || isSunday) {
-            bgClass = "bg-red-50";
-          } else if (isSaturday) {
-            bgClass = "bg-blue-50";
-          }
+          if (isHoliday || isSunday) bgClass = "bg-red-50";
+          else if (isSaturday) bgClass = "bg-blue-50";
 
           return (
             <div

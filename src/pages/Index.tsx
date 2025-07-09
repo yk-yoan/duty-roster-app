@@ -6,7 +6,7 @@ import { signOut } from "firebase/auth";
 import { AuthContext } from "../contexts/AuthContext";
 
 function Index() {
-  const { selectedDoctor } = useContext(SelectedDoctorContext);
+  const { selectedDoctor, setSelectedDoctor } = useContext(SelectedDoctorContext);
   const { role, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
@@ -22,6 +22,11 @@ function Index() {
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/login");
+  };
+
+  const handleSwitchUser = () => {
+    setSelectedDoctor(null);
+    navigate("/select-user");
   };
 
   // 当月を計算
@@ -97,6 +102,13 @@ function Index() {
           >
             My日当直
           </Link>
+
+          <button
+            onClick={handleSwitchUser}
+            className="block p-2 bg-gray-200 hover:bg-gray-300 rounded text-center w-full"
+          >
+            ユーザー切り替え
+          </button>
 
           <button
             onClick={handleLogout}

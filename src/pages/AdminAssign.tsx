@@ -19,6 +19,7 @@ function AdminAssign() {
     Record<string, { dayDuty: string[]; nightDuty: string[] }>
   >({});
   const [hopes, setHopes] = useState<Record<string, Record<string, string>>>({});
+  const [hopesLoaded, setHopesLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [holidays, setHolidays] = useState<Record<string, string>>({});
@@ -115,6 +116,7 @@ function AdminAssign() {
         }
       }
       setHopes(entries);
+      setHopesLoaded(true);
     };
     if (doctors.length > 0 && month) {
       fetchHopes();
@@ -180,12 +182,15 @@ function AdminAssign() {
 
   const counts = getCounts();
 
-  if (loading || !month)
+  if (loading || !month || !hopesLoaded)
     return (
-      <div className="text-center mt-10">
-        <p>読み込み中...</p>
+    <div className="flex items-center justify-center h-screen">
+      <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+        <p className="mt-4 text-lg font-semibold text-gray-700">読み込み中...</p>
       </div>
-    );
+    </div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto mt-10 p-6 bg-white shadow rounded space-y-6">
@@ -217,6 +222,7 @@ function AdminAssign() {
       <div className="flex items-center gap-4">
         <span className="font-medium">凡例:</span>
         <span className="flex items-center gap-1 text-green-600">● 当直希望</span>
+        <span className="flex items-center gap-1 text-purple-600">● 日直希望</span>
       </div>
 
       <div className="flex flex-wrap gap-4 mb-4">
@@ -224,7 +230,10 @@ function AdminAssign() {
           <label className="mr-2">月を選択:</label>
           <select
             value={month}
-            onChange={(e) => setMonth(e.target.value)}
+            onChange={(e) => {
+            setMonth(e.target.value);
+            setHopesLoaded(false);
+           }}
             className="p-2 border rounded"
           >
             {monthOptions.map((opt) => (
@@ -306,7 +315,11 @@ function AdminAssign() {
                           : "bg-white hover:bg-gray-100"
                       } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      {doctor.name} ({doctor.year})
+                    <span
+                      className={hope === "日直希望" ? "text-purple-600" : ""}
+                    >
+                    {doctor.name} ({doctor.year})
+                    </span>
                     </button>
                   );
                 })}
@@ -410,7 +423,7 @@ function AdminAssign() {
                     .map((doctor) => (
                       <tr key={doctor.id} className="hover:bg-gray-50">
                         <td className="border px-2 py-1">
-                          {doctor.name}（{doctor.year}年目）
+                          {doctor.name}（{doctor.year}）
                         </td>
                         <td className="border px-2 py-1 text-center">
                           {counts[doctor.id].day}

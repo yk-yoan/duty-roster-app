@@ -84,9 +84,12 @@ function MyDuties() {
 
   if (loading || loadingData || !month) {
     return (
-      <div className="mt-10 text-center">
-        <p className="text-gray-600">読み込み中...</p>
+      <div className="flex items-center justify-center h-screen">
+      <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+        <p className="mt-4 text-lg font-semibold text-gray-700">読み込み中...</p>
       </div>
+    </div>
     );
   }
 

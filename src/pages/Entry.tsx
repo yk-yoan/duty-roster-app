@@ -1,3 +1,4 @@
+// Entry.tsx
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -98,13 +99,11 @@ function Entry() {
       for (let i = 0; i < daysInMonth.length; i++) {
         const { date, dayOfWeek, holiday } = daysInMonth[i];
 
-        // 平日かつ祝日でない日 → 終日不可
         if (dayOfWeek >= 1 && dayOfWeek <= 5 && !holiday) {
           updatedEntries[date] = "終日不可";
           continue;
         }
 
-        // 翌日を確認
         const nextDay = daysInMonth[i + 1];
         if (nextDay) {
           const nextIsWeekday = nextDay.dayOfWeek >= 1 && nextDay.dayOfWeek <= 5 && !nextDay.holiday;
@@ -114,7 +113,6 @@ function Entry() {
           }
         }
 
-        // デフォルト
         updatedEntries[date] = "指定なし";
       }
       setEntries(updatedEntries);
@@ -142,9 +140,12 @@ function Entry() {
 
   if (!selectedDoctor || loading) {
     return (
-      <div className="text-center mt-10">
-        <p>読み込み中...</p>
+      <div className="flex items-center justify-center h-screen">
+      <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+        <p className="mt-4 text-lg font-semibold text-gray-700">読み込み中...</p>
       </div>
+    </div>
     );
   }
 

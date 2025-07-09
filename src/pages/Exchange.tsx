@@ -342,8 +342,21 @@ if (exchangeStatus === "completed") {
     <div className="flex flex-col items-center justify-center min-h-screen bg-white space-y-4">
       <h2 className="text-xl font-bold text-green-600">交換が完了しました！</h2>
       <button
-        onClick={() => {
+        onClick={async () => {
           setExchangeStatus("idle");
+
+          // 状態をすべて初期化
+          setSelectedMyDuty("");
+          setSelectedDoctorId("");
+          setSelectedTargetDuty("");
+          setAgreed(false);
+          setTargetDuties([]);
+          setRecommendedDoctors([]);
+
+          // データを再取得
+          await fetchMyDuties();
+          await fetchDoctors();
+          await fetchHopes();
         }}
         className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
       >

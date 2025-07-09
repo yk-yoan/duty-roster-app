@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 
 function Exchange() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
   const { selectedDoctor } = useContext(SelectedDoctorContext);
   const [myDuties, setMyDuties] = useState<{ date: string; type: "日直" | "当直" }[]>([]);
   const [selectedMyDuty, setSelectedMyDuty] = useState<string>("");
@@ -25,6 +26,7 @@ function Exchange() {
   const [loading, setLoading] = useState(false);
   const [assignmentsData, setAssignmentsData] = useState<any>({});
   const [hopesData, setHopesData] = useState<any>({});
+  const [exchangeStatus, setExchangeStatus] = useState<"idle" | "processing" | "completed">("idle");
 
   const navigate = useNavigate();
 
@@ -150,6 +152,17 @@ function Exchange() {
   }, [selectedDoctorId]);
 
   useEffect(() => {
+  if (
+    Object.keys(assignmentsData).length > 0 &&
+    doctors.length > 0 &&
+    Object.keys(hopesData).length > 0 &&
+    myDuties.length > 0
+  ) {
+    setPageLoading(false);
+  }
+  }, [assignmentsData, doctors, hopesData, myDuties]);
+
+  useEffect(() => {
     if (!selectedDoctor || !selectedMyDuty || !assignmentsData || !hopesData || !doctors.length) return;
 
     const [myDate, myType] = selectedMyDuty.split("|") as [string, "日直" | "当直"];
@@ -200,9 +213,11 @@ function Exchange() {
   }, [selectedMyDuty, assignmentsData, hopesData, doctors, selectedDoctor]);
 
   const handleExchange = async () => {
-    if (!selectedMyDuty || !selectedTargetDuty || !agreed || !selectedDoctor) return;
+  if (!selectedMyDuty || !selectedTargetDuty || !agreed || !selectedDoctor) return;
 
-    setLoading(true);
+  setExchangeStatus("processing"); // ローディング状態に切り替え
+
+  try {
     const [myDate, myType] = selectedMyDuty.split("|");
     const [targetDate, targetType] = selectedTargetDuty.split("|");
 
@@ -239,18 +254,58 @@ function Exchange() {
     await fetchMyDuties();
     await fetchTargetDuties(selectedDoctorId);
 
+    // ステートリセット
     setSelectedMyDuty("");
     setSelectedTargetDuty("");
     setSelectedDoctorId("");
     setAgreed(false);
-    setLoading(false);
-    setRecommendedDoctors([]);
-    alert("交換が完了しました！");
-  };
 
+    setExchangeStatus("completed"); // 完了ステータスに
+  } catch (err) {
+    alert("交換中にエラーが発生しました。");
+    setExchangeStatus("idle"); // リセット
+  }
+};
 
+  if (pageLoading) {
+  return (
+   <div className="flex items-center justify-center h-screen">
+      <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
+        <p className="mt-4 text-lg font-semibold text-gray-700">読み込み中...</p>
+      </div>
+    </div>
+  );
+  }
+  if (exchangeStatus === "processing") {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-white">
+      <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-500 mb-4"></div>
+        <p className="text-blue-700 text-lg font-semibold">交換処理中...</p>
+      </div>
+    </div>
+  );
+}
+
+if (exchangeStatus === "completed") {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white space-y-4">
+      <h2 className="text-xl font-bold text-green-600">交換が完了しました！</h2>
+      <button
+        onClick={() => {
+          setExchangeStatus("idle");
+        }}
+        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded"
+      >
+        戻る
+      </button>
+    </div>
+  );
+}
 
   return (
+
     <div className="max-w-3xl mx-auto p-4 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">日当直交換</h1>

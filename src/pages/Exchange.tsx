@@ -213,6 +213,7 @@ function Exchange() {
   if (!selectedMyDuty || !selectedTargetDuty || !agreed || !selectedDoctor) return;
 
   setExchangeStatus("processing"); // ローディング状態に切り替え
+  const targetDoctor = doctors.find(doc => doc.id === selectedDoctorId);
 
   try {
     const [myDate, myType] = selectedMyDuty.split("|");
@@ -253,7 +254,9 @@ function Exchange() {
 
    await addDoc(collection(db, "exchangeLogs"), {
       fromDoctorId: selectedDoctor.id,
+      fromDoctorName: selectedDoctor.name,
       toDoctorId: selectedDoctorId,
+      toDoctorName: targetDoctor?.name || "",
       myDate,
       myType,
       targetDate,
@@ -280,6 +283,7 @@ const handleTransfer = async () => {
 
   setExchangeStatus("processing");
   const [date, type] = selectedMyDuty.split("|");
+  const targetDoctor = doctors.find(doc => doc.id === selectedDoctorId);
 
   try {
     const [myDate, myType] = selectedMyDuty.split("|") as [string, "日直" | "当直"];
@@ -317,7 +321,9 @@ const handleTransfer = async () => {
     await fetchTargetDuties(selectedDoctorId);
     await addDoc(collection(db, "exchangeLogs"), {
       fromDoctorId: selectedDoctor.id,
+      fromDoctorName: selectedDoctor.name,
       toDoctorId: selectedDoctorId,
+      toDoctorName: targetDoctor?.name || "",
       date,
       type,
       timestamp: new Date().toISOString(),

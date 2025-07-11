@@ -251,7 +251,7 @@ function Exchange() {
     await fetchMyDuties();
     await fetchTargetDuties(selectedDoctorId);
 
-    await addDoc(collection(db, "exchangeLogs"), {
+   await addDoc(collection(db, "exchangeLogs"), {
       fromDoctorId: selectedDoctor.id,
       toDoctorId: selectedDoctorId,
       myDate,
@@ -260,8 +260,8 @@ function Exchange() {
       targetType,
       timestamp: new Date().toISOString(),
       mode: "exchange", // mode で区別
+      notified: false,
     });
-
     // ステートリセット
     setSelectedMyDuty("");
     setSelectedTargetDuty("");
@@ -322,6 +322,7 @@ const handleTransfer = async () => {
       type,
       timestamp: new Date().toISOString(),
       mode: "transfer",
+      notified: false,
     });
 
     // ステートをリセット

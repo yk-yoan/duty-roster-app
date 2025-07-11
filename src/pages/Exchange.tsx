@@ -5,9 +5,11 @@ import {
   getDocs,
   doc,
   updateDoc,
+  addDoc,
 } from "firebase/firestore";
 import { SelectedDoctorContext } from "../contexts/SelectedDoctorContext";
 import { useNavigate } from "react-router-dom";
+
 
 function Exchange() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -249,6 +251,17 @@ function Exchange() {
     await fetchMyDuties();
     await fetchTargetDuties(selectedDoctorId);
 
+    await addDoc(collection(db, "exchangeLogs"), {
+      fromDoctorId: selectedDoctor.id,
+      toDoctorId: selectedDoctorId,
+      myDate,
+      myType,
+      targetDate,
+      targetType,
+      timestamp: new Date().toISOString(),
+      mode: "exchange", // mode で区別
+    });
+
     // ステートリセット
     setSelectedMyDuty("");
     setSelectedTargetDuty("");
@@ -266,6 +279,7 @@ const handleTransfer = async () => {
   if (!selectedMyDuty || !selectedDoctorId || selectedTargetDuty !== "" || !selectedDoctor) return;
 
   setExchangeStatus("processing");
+  const [date, type] = selectedMyDuty.split("|");
 
   try {
     const [myDate, myType] = selectedMyDuty.split("|") as [string, "日直" | "当直"];
@@ -301,6 +315,14 @@ const handleTransfer = async () => {
 
     await fetchMyDuties();
     await fetchTargetDuties(selectedDoctorId);
+    await addDoc(collection(db, "exchangeLogs"), {
+      fromDoctorId: selectedDoctor.id,
+      toDoctorId: selectedDoctorId,
+      date,
+      type,
+      timestamp: new Date().toISOString(),
+      mode: "transfer",
+    });
 
     // ステートをリセット
     setSelectedMyDuty("");

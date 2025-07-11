@@ -66,6 +66,13 @@ function Index() {
             >
               当直表閲覧
             </Link>
+
+            <Link
+              to="/admin/exchange-logs"
+              className="block p-3 bg-red-500 hover:bg-red-600 text-white rounded text-center"
+            >
+              交換ログ
+            </Link>
           </div>
 
           <div className="pt-4">

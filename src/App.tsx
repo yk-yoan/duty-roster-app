@@ -12,7 +12,8 @@ import AdminDoctors from "./pages/AdminDoctors";
 import Roster from "./pages/Roster";
 import MyDuties from "./pages/MyDuties";
 import AdminHopes from "./pages/AdminHopes";
-import Exchange from "./pages/Exchange"; // ★ 追加
+import Exchange from "./pages/Exchange";
+import AdminExchangeLogs from "./pages/AdminExchangeLogs";
 
 const ProtectedRoute = ({
   children,
@@ -123,6 +124,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Roster />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/exchange-logs"
+            element={
+              <ProtectedRoute adminOnly>
+                <AdminExchangeLogs />
               </ProtectedRoute>
             }
           />
